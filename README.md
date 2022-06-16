@@ -4,7 +4,8 @@ React Native 心形连击特效
 
 ## 演示
 
-待添加
+https://user-images.githubusercontent.com/8678079/173979841-30290c9e-e867-496e-90a4-3b008dec3a08.mp4
+
 
 ## 开始
 
