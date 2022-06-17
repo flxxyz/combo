@@ -81,17 +81,7 @@ const App = () => {
         <Text style={{fontSize: 32}}>上回连击次数: {counterResult}</Text>
       </View>
       <TapGestureHandler onHandlerStateChange={e => _onSingleTap(e)}>
-        <View
-          style={[
-            backgroundStyle,
-            {
-              width: '100%',
-              height: '100%',
-              position: 'absolute',
-              zIndex: 999,
-              backgroundColor: 'transparent',
-            },
-          ]}>
+        <View style={[backgroundStyle, styles.warp]}>
           {hearts.map(
             (item: {key: string; x: number; y: number; idx: number}) => (
               <Box {...item} boxKey={item.key} onAnimFinished={removeHeart} />
@@ -106,6 +96,13 @@ const App = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  warp: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    zIndex: 999,
+    backgroundColor: 'transparent',
   },
 });
 

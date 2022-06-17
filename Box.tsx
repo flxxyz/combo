@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useRef} from 'react';
 import {StyleSheet} from 'react-native';
 import Animated, {
   useSharedValue,
@@ -6,6 +6,7 @@ import Animated, {
   withSpring,
   withSequence,
   withTiming,
+  withDelay,
   runOnJS,
   Easing,
 } from 'react-native-reanimated';
@@ -19,51 +20,87 @@ export default React.memo(
     onAnimFinished: any;
   }) {
     const {idx, boxKey, x, y, onAnimFinished} = props;
-    console.log(props);
 
-    const baseDuration = 500;
     const translationX = useSharedValue(x);
     const translationY = useSharedValue(y);
+    const opacity = useSharedValue(1);
+    const scale = useSharedValue(1.2);
+    const startTime = useRef(0);
 
-    const handleAnimationEnd = (finished?: boolean) =>
+    const handleAnimationEnd = (finished?: boolean) => {
       onAnimFinished(boxKey, finished);
 
+      const executionTime = (Date.now() - startTime.current) / 1000;
+      console.log(
+        'handleAnimationEnd()',
+        `idx: ${idx};`,
+        'executionTime:',
+        executionTime.toFixed(2),
+        's',
+      );
+    };
+
+    const exiting = (_?: boolean) => {
+      opacity.value = withDelay(190, withTiming(0, {duration: 200}));
+      translationY.value = withDelay(
+        100,
+        withTiming(translationY.value - 50, {duration: 200}),
+      );
+      scale.value = withDelay(
+        200,
+        withTiming(2.25, {duration: 200}, (finished?: boolean) =>
+          runOnJS(handleAnimationEnd)(finished),
+        ),
+      );
+    };
+
     const animatedStyle = useAnimatedStyle(() => {
-      const deg = [45, 0, 120, 60];
+      const deg = [-6, -32, -11, -24, -19, -42];
+      const baseX = Math.abs(translationX.value - 50);
+      const baseY = Math.abs(translationY.value - 50);
 
       return {
-        opacity: withSequence(
-          withSpring(1),
-          withTiming(0.1, {duration: baseDuration, easing: Easing.linear}),
-        ),
+        opacity: opacity.value,
         transform: [
           {
-            translateX: Math.abs(translationX.value - 50),
+            translateX: baseX,
           },
           {
-            translateY: Math.abs(translationY.value - 50),
+            translateY: baseY,
           },
           {
             rotate: `${deg[idx % deg.length]}deg`,
           },
           {
-            scale: withSequence(
-              withSpring(0.8),
-              withTiming(
-                2,
-                {
-                  duration: baseDuration,
-                  easing: Easing.bezier(0.5, 0.1, 0.2, 1),
-                },
-                (finished?: boolean) => runOnJS(handleAnimationEnd)(finished),
-              ),
-            ),
+            scale: scale.value,
           },
         ],
       };
-    });
+    }, [translationX, translationY, opacity, scale]);
 
-    return <Animated.View style={[styles.box, animatedStyle]} />;
+    useEffect(() => {
+      startTime.current = Date.now();
+      translationX.value = x;
+      translationY.value = y;
+
+      scale.value = withSequence(
+        withTiming(scale.value, {
+          duration: 10,
+          easing: Easing.bezier(0.1, 0.3, 0.8, 1),
+        }),
+        withTiming(1, {duration: 5, easing: Easing.linear}),
+        withSpring(1.2, {velocity: -2}, (finished?: boolean) =>
+          runOnJS(exiting)(finished),
+        ),
+      );
+    }, []);
+
+    return (
+      <Animated.Image
+        source={require('./images/heart.png')}
+        style={[styles.box, animatedStyle]}
+      />
+    );
   },
   (prevProps, nextProps) => {
     if (prevProps.idx !== nextProps.idx) {
@@ -76,9 +113,8 @@ export default React.memo(
 const styles = StyleSheet.create({
   box: {
     position: 'absolute',
-    backgroundColor: '#ff7391',
     width: 100,
     height: 100,
-    zIndex: 999,
+    zIndex: 2,
   },
 });
